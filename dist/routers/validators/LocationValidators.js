@@ -45,7 +45,7 @@ class LocationValidators {
     }
     static stateLocation() {
         return [(0, express_validator_1.param)('id').custom((id, { req }) => {
-                return Location_1.default.find({ state_id: id }, { __v: 0 }).populate([{ path: "state_id" }]).then((location) => {
+                return Location_1.default.find({ state_id: id }, { __v: 0 }).populate([{ path: "state_id" }, { path: "candidate_winner_id" }]).then((location) => {
                     if (location) {
                         req.location = location;
                         return true;

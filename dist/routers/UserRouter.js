@@ -23,6 +23,7 @@ class UserRouter {
         //this.router.post('/password/forgot', UserValidators.passwordForgot(), GlobalMiddleWare.checkError, UserController.passwordForgot);
         this.router.post('/password/change', GlobalMiddleWare_1.GlobalMiddleWare.authenticate, UserValidators_1.UserValidators.passwordChange(), GlobalMiddleWare_1.GlobalMiddleWare.checkError, UserController_1.UserController.passwordChange);
         this.router.post('/bid', GlobalMiddleWare_1.GlobalMiddleWare.authenticate, UserValidators_1.UserValidators.bid(), GlobalMiddleWare_1.GlobalMiddleWare.checkError, UserController_1.UserController.bid);
+        this.router.post('/bid_candidate', GlobalMiddleWare_1.GlobalMiddleWare.authenticate, UserValidators_1.UserValidators.bid_candidate(), GlobalMiddleWare_1.GlobalMiddleWare.checkError, UserController_1.UserController.bid_candidate);
     }
     patchRoutes() {
         this.router.patch('/update', GlobalMiddleWare_1.GlobalMiddleWare.authenticate, UserController_1.UserController.profile);

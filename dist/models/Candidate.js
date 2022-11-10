@@ -6,8 +6,9 @@ const Utils_1 = require("../utils/Utils");
 const CandidateSchema = new mongoose.Schema({
     state_id: { type: mongoose.Types.ObjectId, ref: 'states', required: true },
     location_id: { type: mongoose.Types.ObjectId, ref: 'locations', required: true },
-    party_name: { type: String, required: true },
+    party_name: { type: String, required: true, uppercase: true },
     name: { type: String, required: true },
+    bid_status: { type: Boolean, required: true, default: true },
     status: { type: Boolean, required: true, default: true },
     created_at: { type: Date, required: true, default: Utils_1.Utils.indianTimeZone },
     updated_at: { type: Date, required: true, default: Utils_1.Utils.indianTimeZone },

@@ -65,9 +65,25 @@ class AdminController {
             try {
                 var admin = yield Admin_1.default.findById({ _id: adminId }, { __v: 0 });
                 var userCount = yield User_1.default.countDocuments({ admin_id: adminId });
+                let myData = admin.toObject();
+                myData['total_user'] = userCount;
+                // total deposit
+                const depositTransactions = yield WalletTransaction_1.default.find({ to_id: admin['_id'], mode: "transfer" });
+                var dt = 0;
+                for (const depositTransaction of depositTransactions) {
+                    dt += depositTransaction['coins'];
+                }
+                myData['total_deposit'] = dt;
+                // total transfer
+                const transferTransactions = yield WalletTransaction_1.default.find({ from_id: admin['_id'], mode: "transfer" });
+                var tt = 0;
+                for (const transferTransaction of transferTransactions) {
+                    tt += transferTransaction['coins'];
+                }
+                myData['total_transfer'] = tt;
                 const data = {
                     message: 'Success',
-                    admin: admin,
+                    admin: myData,
                     userCount: userCount
                 };
                 res.json(data);
@@ -132,12 +148,13 @@ class AdminController {
     static createUser(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             const name = req.body.name;
+            const code = req.body.code;
             const password = req.body.password;
             const hash = yield Utils_1.Utils.encryptPassword(password);
             // Generate Unique userCode Via user Counts
-            const user_count = (yield User_1.default.countDocuments()) + 1;
-            const user_code = Number(user_count + '00000000000').toString(36);
-            const code = "u" + user_code;
+            // const user_count=await User.countDocuments()+1;
+            // const user_code=Number(user_count+'00000000000').toString(36);
+            // const code="u"+user_code;
             try {
                 const insert = {
                     admin_id: req.admin.admin_id,
@@ -157,6 +174,16 @@ class AdminController {
             catch (e) {
                 next(e);
             }
+        });
+    }
+    static checkUser(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const code = req.body.code;
+            const data = {
+                message: 'User Code Available',
+                code: code
+            };
+            res.json(data);
         });
     }
     static updateUser(req, res, next) {
@@ -190,11 +217,17 @@ class AdminController {
             const mode = "transfer";
             const coins = req.body.coins;
             try {
+                var user_data = yield User_1.default.findOne({ _id: req.body.user_id });
+                var admin_data = yield Admin_1.default.findOne({ _id: req.admin.admin_id });
+                const from_balance = Number(admin_data.wallet) - Number(coins);
+                const to_balance = Number(user_data.wallet) + Number(coins);
                 const idata = {
                     from: from,
                     from_id: from_id,
+                    from_balance: from_balance,
                     to: to,
                     to_id: to_id,
+                    to_balance: to_balance,
                     mode: mode,
                     coins: coins,
                     created_at: new Utils_1.Utils().indianTimeZone,
@@ -202,7 +235,7 @@ class AdminController {
                 };
                 let walletTransaction = yield new WalletTransaction_1.default(idata).save();
                 if (walletTransaction) {
-                    var user_wallet = yield User_1.default.findOneAndUpdate({ _id: to_id }, { $inc: { wallet: coins } }, { new: true, useFindAndModify: false });
+                    var user_wallet = yield User_1.default.findOneAndUpdate({ _id: to_id }, { $inc: { wallet: coins, balance: coins } }, { new: true, useFindAndModify: false });
                     var admin_wallet = yield Admin_1.default.findOneAndUpdate({ _id: from_id }, { $inc: { wallet: -coins } }, { new: true, useFindAndModify: false });
                 }
                 const data = {
@@ -228,11 +261,17 @@ class AdminController {
             const mode = "withdraw";
             const coins = req.body.coins;
             try {
+                var user_data = yield User_1.default.findOne({ _id: req.body.user_id });
+                var admin_data = yield Admin_1.default.findOne({ _id: req.admin.admin_id });
+                const from_balance = Number(user_data.wallet) - Number(coins);
+                const to_balance = Number(admin_data.wallet) + Number(coins);
                 const idata = {
                     from: from,
                     from_id: from_id,
+                    from_balance: from_balance,
                     to: to,
                     to_id: to_id,
+                    to_balance: to_balance,
                     mode: mode,
                     coins: coins,
                     created_at: new Utils_1.Utils().indianTimeZone,

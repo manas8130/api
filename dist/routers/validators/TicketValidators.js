@@ -7,6 +7,7 @@ const Ticket_1 = require("../../models/Ticket");
 class TicketValidators {
     static create() {
         return [
+            (0, express_validator_1.body)('name', 'name Is Required'),
             (0, express_validator_1.body)('party_id', 'party_id Is Required').custom((party_id, { req }) => {
                 return Party_1.default.findOne({ _id: party_id }).then(party => {
                     if (party) {

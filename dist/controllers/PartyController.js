@@ -10,8 +10,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PartyController = void 0;
+const Bid_1 = require("../models/Bid");
 const Party_1 = require("../models/Party");
 const Ticket_1 = require("../models/Ticket");
+const User_1 = require("../models/User");
+const WalletTransaction_1 = require("../models/WalletTransaction");
+const Utils_1 = require("../utils/Utils");
 class PartyController {
     static create(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -49,32 +53,76 @@ class PartyController {
             const partyId = req.party._id;
             try {
                 // update party winning_seats
-                const party = yield Party_1.default.findOneAndUpdate({ _id: partyId }, { winning_seats: req.body.winning_seats }, { new: true, useFindAndModify: false });
+                const party = yield Party_1.default.findOneAndUpdate({ _id: partyId }, { winning_seats: req.body.winning_seats, result_declare_status: true }, { new: true, useFindAndModify: false });
                 if (party) {
                     let party_winning_seats = party['winning_seats'];
                     if (party_winning_seats) {
                         // All ticket of this party
                         let tickets = yield Ticket_1.default.find({ party_id: party['_id'] }, { __v: 0 });
                         for (const ticket of tickets) {
-                            // update yes_seats
-                            if (party_winning_seats >= ticket['yes_seats']) {
-                                yield Ticket_1.default.findOneAndUpdate({ _id: ticket['_id'] }, { yes_result: true }, { new: true, useFindAndModify: false });
-                            }
-                            else {
-                                yield Ticket_1.default.findOneAndUpdate({ _id: ticket['_id'] }, { yes_result: false }, { new: true, useFindAndModify: false });
-                            }
-                            // update no_seats
-                            if (party_winning_seats <= ticket['no_seats']) {
-                                yield Ticket_1.default.findOneAndUpdate({ _id: ticket['_id'] }, { no_result: true }, { new: true, useFindAndModify: false });
-                            }
-                            else {
-                                yield Ticket_1.default.findOneAndUpdate({ _id: ticket['_id'] }, { no_result: false }, { new: true, useFindAndModify: false });
+                            yield Ticket_1.default.findOneAndUpdate({ _id: ticket['_id'] }, { result_declare_status: true, expire: true }, { new: true, useFindAndModify: false });
+                            const bids = yield Bid_1.default.find({ ticket_type: "tickets", ticket_id: ticket['_id'], result_declare_status: false, bid_status: "pending" });
+                            for (const bid of bids) {
+                                var user_data = yield User_1.default.findOne({ _id: bid['user_id'] });
+                                // update yes_seats
+                                if (bid['yes_or_no'] == "yes") {
+                                    if (party_winning_seats >= bid['seat']) {
+                                        let winning_amount = bid['bid_amount'] + (bid['bid_amount'] * bid['winning_percentage']) / 100;
+                                        let to_balance = user_data.wallet + winning_amount;
+                                        // update bid
+                                        yield Bid_1.default.findOneAndUpdate({ _id: bid['_id'] }, { result: true, result_declare_status: true, winning_amount: winning_amount, bid_status: "win" }, { new: true, useFindAndModify: false });
+                                        // create transaction
+                                        const idata = {
+                                            to: 'users',
+                                            to_id: bid['user_id'],
+                                            to_balance: to_balance,
+                                            mode: "winning",
+                                            coins: winning_amount,
+                                            bid_id: bid['_id'],
+                                            created_at: new Utils_1.Utils().indianTimeZone,
+                                            updated_at: new Utils_1.Utils().indianTimeZone
+                                        };
+                                        let walletTransaction = yield new WalletTransaction_1.default(idata).save();
+                                        if (walletTransaction) {
+                                            yield User_1.default.findOneAndUpdate({ _id: bid['user_id'] }, { $inc: { wallet: winning_amount } }, { new: true, useFindAndModify: false });
+                                        }
+                                    }
+                                    else {
+                                        yield Bid_1.default.findOneAndUpdate({ _id: bid['_id'] }, { result: false, result_declare_status: true, winning_amount: 0, bid_status: "loss" }, { new: true, useFindAndModify: false });
+                                    }
+                                }
+                                else {
+                                    if (party_winning_seats <= bid['seat']) {
+                                        let winning_amount = bid['bid_amount'] + (bid['bid_amount'] * bid['winning_percentage']) / 100;
+                                        let to_balance = user_data.wallet + winning_amount;
+                                        // update bid
+                                        yield Bid_1.default.findOneAndUpdate({ _id: bid['_id'] }, { result: true, result_declare_status: true, winning_amount: winning_amount, bid_status: "win" }, { new: true, useFindAndModify: false });
+                                        // create transaction
+                                        const idata = {
+                                            to: 'users',
+                                            to_id: bid['user_id'],
+                                            to_balance: to_balance,
+                                            mode: "winning",
+                                            coins: winning_amount,
+                                            bid_id: bid['_id'],
+                                            created_at: new Utils_1.Utils().indianTimeZone,
+                                            updated_at: new Utils_1.Utils().indianTimeZone
+                                        };
+                                        let walletTransaction = yield new WalletTransaction_1.default(idata).save();
+                                        if (walletTransaction) {
+                                            yield User_1.default.findOneAndUpdate({ _id: bid['user_id'] }, { $inc: { wallet: winning_amount } }, { new: true, useFindAndModify: false });
+                                        }
+                                    }
+                                    else {
+                                        yield Bid_1.default.findOneAndUpdate({ _id: bid['_id'] }, { result: true, result_declare_status: true, winning_amount: 0, bid_status: "loss" }, { new: true, useFindAndModify: false });
+                                    }
+                                }
                             }
                         }
                     }
                 }
                 res.json({
-                    message: 'Party Winning Seat Updated Successfully',
+                    message: 'Party Result Declared Successfully',
                     data: party,
                     status_code: 200
                 });

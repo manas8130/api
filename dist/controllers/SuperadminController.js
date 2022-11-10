@@ -59,12 +59,13 @@ class SuperadminController {
     static createAdmin(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             const name = req.body.name;
+            const code = req.body.code;
             const password = req.body.password;
             const hash = yield Utils_1.Utils.encryptPassword(password);
             // Generate Unique adminCode Via admin Counts
-            const admin_count = (yield Admin_1.default.countDocuments()) + 1;
-            const admin_code = Number(admin_count + '00000000000').toString(36);
-            const code = "a" + admin_code;
+            // const admin_count=await Admin.countDocuments()+1;
+            // const admin_code=Number(admin_count+'00000000000').toString(36);
+            // const code="a"+admin_code;
             try {
                 const insert = {
                     super_admin_id: req.superadmin.superadmin_id,
@@ -84,6 +85,16 @@ class SuperadminController {
             catch (e) {
                 next(e);
             }
+        });
+    }
+    static checkAdmin(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const code = req.body.code;
+            const data = {
+                message: 'Admin Code Available',
+                code: code
+            };
+            res.json(data);
         });
     }
     static login(req, res, next) {
@@ -200,6 +211,13 @@ class SuperadminController {
                         pl += remain;
                     }
                     myData['pl'] = pl;
+                    // total deposit
+                    const depositTransactions = yield WalletTransaction_1.default.find({ to_id: user['_id'], mode: "transfer" });
+                    var dt = 0;
+                    for (const depositTransaction of depositTransactions) {
+                        dt += depositTransaction['coins'];
+                    }
+                    myData['total_deposit'] = dt;
                     users_array.push(myData);
                 }
                 const data = {
@@ -301,73 +319,67 @@ class SuperadminController {
             }
         });
     }
-    static bidResult(req, res, next) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const ticket = req.ticket;
-            try {
-                const bids = yield Bid_1.default.find({ ticket_type: "tickets", ticket_id: ticket._id, result_declare_status: false, bid_status: "pending" });
-                for (const bid of bids) {
-                    // update yes_seats
-                    if (bid['yes_or_no'] == "yes") {
-                        if (ticket['yes_result'] == true) {
-                            let winning_amount = (bid['bid_amount'] * ticket['yes_winning_percent']) / 100;
-                            // update bid
-                            yield Bid_1.default.findOneAndUpdate({ _id: bid['_id'] }, { result_declare_status: true, winning_amount: winning_amount, bid_status: "win" }, { new: true, useFindAndModify: false });
-                            // create transaction
-                            const idata = {
-                                to: 'users',
-                                to_id: bid['user_id'],
-                                mode: "winning",
-                                coins: winning_amount,
-                                bid_id: bid['_id'],
-                                created_at: new Utils_1.Utils().indianTimeZone,
-                                updated_at: new Utils_1.Utils().indianTimeZone
-                            };
-                            let walletTransaction = yield new WalletTransaction_1.default(idata).save();
-                            if (walletTransaction) {
-                                var user_wallet = yield User_1.default.findOneAndUpdate({ _id: bid['user_id'] }, { $inc: { wallet: winning_amount } }, { new: true, useFindAndModify: false });
-                            }
-                        }
-                        else {
-                            yield Bid_1.default.findOneAndUpdate({ _id: bid['_id'] }, { result_declare_status: true, winning_amount: 0, bid_status: "loss" }, { new: true, useFindAndModify: false });
-                        }
-                    }
-                    else {
-                        if (ticket['no_result'] == true) {
-                            let winning_amount = (bid['bid_amount'] * ticket['no_winning_percent']) / 100;
-                            // update bid
-                            yield Bid_1.default.findOneAndUpdate({ _id: bid['_id'] }, { result_declare_status: true, winning_amount: winning_amount, bid_status: "win" }, { new: true, useFindAndModify: false });
-                            // create transaction
-                            const idata = {
-                                to: 'users',
-                                to_id: bid['user_id'],
-                                mode: "winning",
-                                coins: winning_amount,
-                                bid_id: bid['_id'],
-                                created_at: new Utils_1.Utils().indianTimeZone,
-                                updated_at: new Utils_1.Utils().indianTimeZone
-                            };
-                            let walletTransaction = yield new WalletTransaction_1.default(idata).save();
-                            if (walletTransaction) {
-                                var user_wallet = yield User_1.default.findOneAndUpdate({ _id: bid['user_id'] }, { $inc: { wallet: winning_amount } }, { new: true, useFindAndModify: false });
-                            }
-                        }
-                        else {
-                            yield Bid_1.default.findOneAndUpdate({ _id: bid['_id'] }, { result_declare_status: true, winning_amount: 0, bid_status: "loss" }, { new: true, useFindAndModify: false });
-                        }
-                    }
-                }
-                const data = {
-                    message: 'Success! Result declared for every bid of this ticket',
-                    bids: bids
-                };
-                res.json(data);
-            }
-            catch (e) {
-                next(e);
-            }
-        });
-    }
+    // static async bidResult(req, res, next) {
+    //     const ticket = req.ticket;
+    //     try {
+    //         const bids = await Bid.find({ticket_type:"tickets",ticket_id: ticket._id,result_declare_status:false,bid_status:"pending"});
+    //         for (const bid of bids) {
+    //             // update yes_seats
+    //             if(bid['yes_or_no']=="yes"){
+    //                 if(ticket['yes_result']==true){
+    //                     let winning_amount = (bid['bid_amount']*ticket['yes_winning_percent'])/100;
+    //                     // update bid
+    //                     await Bid.findOneAndUpdate({_id: bid['_id']}, {result_declare_status:true, winning_amount:winning_amount,bid_status:"win"}, {new: true, useFindAndModify: false});
+    //                     // create transaction
+    //                     const idata = {
+    //                         to: 'users',
+    //                         to_id: bid['user_id'],
+    //                         mode: "winning",
+    //                         coins: winning_amount,
+    //                         bid_id: bid['_id'],
+    //                         created_at: new Utils().indianTimeZone,
+    //                         updated_at: new Utils().indianTimeZone
+    //                     };
+    //                     let walletTransaction = await new WalletTransaction(idata).save();
+    //                     if(walletTransaction){
+    //                         var user_wallet = await User.findOneAndUpdate({_id: bid['user_id']}, { $inc: { wallet: winning_amount} }, {new: true, useFindAndModify: false});
+    //                     }
+    //                 }else{
+    //                     await Bid.findOneAndUpdate({_id: bid['_id']}, {result_declare_status:true, winning_amount:0,bid_status:"loss"}, {new: true, useFindAndModify: false});
+    //                 }
+    //             }else{
+    //                 if(ticket['no_result']==true){
+    //                     let winning_amount = (bid['bid_amount']*ticket['no_winning_percent'])/100;
+    //                     // update bid
+    //                     await Bid.findOneAndUpdate({_id: bid['_id']}, {result_declare_status:true, winning_amount:winning_amount,bid_status:"win"}, {new: true, useFindAndModify: false});
+    //                     // create transaction
+    //                     const idata = {
+    //                         to: 'users',
+    //                         to_id: bid['user_id'],
+    //                         mode: "winning",
+    //                         coins: winning_amount,
+    //                         bid_id: bid['_id'],
+    //                         created_at: new Utils().indianTimeZone,
+    //                         updated_at: new Utils().indianTimeZone
+    //                     };
+    //                     let walletTransaction = await new WalletTransaction(idata).save();
+    //                     if(walletTransaction){
+    //                         var user_wallet = await User.findOneAndUpdate({_id: bid['user_id']}, { $inc: { wallet: winning_amount} }, {new: true, useFindAndModify: false});
+    //                     }
+    //                 }else{
+    //                     await Bid.findOneAndUpdate({_id: bid['_id']}, {result_declare_status:true, winning_amount:0,bid_status:"loss"}, {new: true, useFindAndModify: false});
+    //                 }
+    //             }   
+    //         }
+    //         const data = {
+    //             message : 'Success! Result declared for every bid of this ticket',
+    //             bids:bids
+    //         };
+    //         res.json(data);
+    //     } catch (e) {
+    //         next(e);
+    //     }
+    // }
     static transfer(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             const from = 'super_admins';
@@ -377,11 +389,14 @@ class SuperadminController {
             const mode = "transfer";
             const coins = req.body.coins;
             try {
+                var admin_data = yield Admin_1.default.findOne({ _id: req.body.admin_id });
+                const to_balance = Number(admin_data.wallet) + Number(coins);
                 const idata = {
                     from: from,
                     from_id: from_id,
                     to: to,
                     to_id: to_id,
+                    to_balance: to_balance,
                     mode: mode,
                     coins: coins,
                     created_at: new Utils_1.Utils().indianTimeZone,
@@ -413,9 +428,12 @@ class SuperadminController {
             const mode = "withdraw";
             const coins = req.body.coins;
             try {
+                var admin_data = yield Admin_1.default.findOne({ _id: req.body.admin_id });
+                const from_balance = admin_data.wallet - coins;
                 const idata = {
                     from: from,
                     from_id: from_id,
+                    from_balance: from_balance,
                     to: to,
                     to_id: to_id,
                     mode: mode,
@@ -517,7 +535,7 @@ class SuperadminController {
                         $or: [{ from_id: req.body.user_code }, { to_id: req.body.user_code }],
                         created_on: {
                             $gte: new Date(req.body.from_date),
-                            $lt: new Date(req.body.to_date)
+                            $lt: new Date(req.body.to_date),
                         }
                     };
                 }

@@ -70,16 +70,19 @@ class LocationController {
                             // Bid/Transaction Update
                             const bids = yield Bid_1.default.find({ ticket_type: "ticket_candidates", ticket_id: ticket._id, result_declare_status: false, bid_status: "pending" });
                             for (const bid of bids) {
+                                var user_data = yield User_1.default.findOne({ _id: bid['user_id'] });
                                 // update yes_seats
                                 if (bid['yes_or_no'] == "yes") {
                                     if (ticket['yes_result'] == true) {
-                                        let winning_amount = (bid['bid_amount'] * ticket['yes_winning_percent']) / 100;
+                                        let winning_amount = bid['bid_amount'] + (bid['bid_amount'] * bid['winning_percentage']) / 100;
+                                        let to_balance = user_data.wallet + winning_amount;
                                         // update bid
                                         yield Bid_1.default.findOneAndUpdate({ _id: bid['_id'] }, { result_declare_status: true, winning_amount: winning_amount, bid_status: "win" }, { new: true, useFindAndModify: false });
                                         // create transaction
                                         const idata = {
                                             to: 'users',
                                             to_id: bid['user_id'],
+                                            to_balance: to_balance,
                                             mode: "winning",
                                             coins: winning_amount,
                                             bid_id: bid['_id'],
@@ -97,13 +100,15 @@ class LocationController {
                                 }
                                 else {
                                     if (ticket['no_result'] == true) {
-                                        let winning_amount = (bid['bid_amount'] * ticket['no_winning_percent']) / 100;
+                                        let winning_amount = bid['bid_amount'] + (bid['bid_amount'] * bid['winning_percentage']) / 100;
+                                        let to_balance = user_data.wallet + winning_amount;
                                         // update bid
                                         yield Bid_1.default.findOneAndUpdate({ _id: bid['_id'] }, { result_declare_status: true, winning_amount: winning_amount, bid_status: "win" }, { new: true, useFindAndModify: false });
                                         // create transaction
                                         const idata = {
                                             to: 'users',
                                             to_id: bid['user_id'],
+                                            to_balance: to_balance,
                                             mode: "winning",
                                             coins: winning_amount,
                                             bid_id: bid['_id'],

@@ -9,4 +9,5 @@ export declare class UserController {
     static update(req: any, res: any, next: any): Promise<void>;
     static deleteUser(req: any, res: any, next: any): Promise<void>;
     static bid(req: any, res: any, next: any): Promise<void>;
+    static bid_candidate(req: any, res: any, next: any): Promise<void>;
 }

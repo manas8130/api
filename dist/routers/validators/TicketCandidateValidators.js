@@ -39,7 +39,16 @@ class TicketCandidateValidators {
                     }
                 });
             }),
-            (0, express_validator_1.body)('yes_winning_percent', 'yes_winning_percent Is Required'),
+            (0, express_validator_1.body)('yes_winning_percent', 'yes_winning_percent Is Required').custom((yes_winning_percent, { req }) => {
+                return TicketCandidate_1.default.findOne({ candidate_id: req.body.candidate_id }).then(ticketCandidate => {
+                    if (ticketCandidate) {
+                        throw new Error("Ticket for this candidate already exist");
+                    }
+                    else {
+                        return true;
+                    }
+                });
+            }),
             (0, express_validator_1.body)('no_winning_percent', 'no_winning_percent Is Required'),
             (0, express_validator_1.body)('min_bid', 'min_bid Is Required'),
             (0, express_validator_1.body)('max_bid', 'max_bid Is Required')

@@ -5,10 +5,13 @@ const mongoose_1 = require("mongoose");
 const Utils_1 = require("../utils/Utils");
 const BidSchema = new mongoose.Schema({
     user_id: { type: mongoose.Types.ObjectId, ref: 'users', required: true },
-    //ticket_id                : {type: mongoose.Types.ObjectId, ref: 'tickets', required: true},
     ticket_id: { type: mongoose.Types.ObjectId, refPath: 'ticket_type', required: true },
     ticket_type: { type: String, enum: ['tickets', 'ticket_candidates'], required: true },
+    ticket_data: { type: String, required: true },
     yes_or_no: { type: String, required: true, enum: ['yes', 'no'] },
+    seat: { type: Number, required: false },
+    winning_percentage: { type: Number, required: false },
+    result: { type: Boolean, required: false },
     bid_amount: { type: Number, required: true },
     winning_amount: { type: Number, required: false },
     result_declare_status: { type: Boolean, required: true, default: false },

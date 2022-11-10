@@ -8,7 +8,31 @@ class AdminValidators {
     static createUser() {
         return [
             (0, express_validator_1.body)('name', 'name is Required').isString(),
+            (0, express_validator_1.body)('code', 'code is Required').isString().custom((code, { req }) => {
+                return User_1.default.findOne({ code: code }).then(user => {
+                    if (user) {
+                        throw new Error('User Already Exist');
+                    }
+                    else {
+                        return true;
+                    }
+                });
+            }),
             (0, express_validator_1.body)('password', 'password is Required').isString()
+        ];
+    }
+    static checkUser() {
+        return [
+            (0, express_validator_1.body)('code', 'code is Required').isString().custom((code, { req }) => {
+                return User_1.default.findOne({ code: code }).then(user => {
+                    if (user) {
+                        throw new Error('User code already exist');
+                    }
+                    else {
+                        return true;
+                    }
+                });
+            })
         ];
     }
     static userTransaction() {

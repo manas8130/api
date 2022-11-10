@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const mongoose_1 = require("mongoose");
 const Utils_1 = require("../utils/Utils");
 const TicketSchema = new mongoose.Schema({
+    name: { type: String, required: true },
     party_id: { type: mongoose.Types.ObjectId, ref: 'parties', required: true },
     yes_seats: { type: Number, required: true },
     yes_winning_percent: { type: Number, required: true },
@@ -15,6 +16,7 @@ const TicketSchema = new mongoose.Schema({
     max_bid: { type: Number, required: true },
     result_declare_status: { type: Boolean, required: true, default: false },
     expire: { type: Boolean, required: true, default: false },
+    bid_status: { type: Boolean, required: true, default: true },
     status: { type: Boolean, required: true, default: true },
     created_at: { type: Date, required: true, default: Utils_1.Utils.indianTimeZone },
     updated_at: { type: Date, required: true, default: Utils_1.Utils.indianTimeZone },

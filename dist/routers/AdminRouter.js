@@ -21,6 +21,7 @@ class AdminRouter {
     }
     postRoutes() {
         this.router.post('/user/create', GlobalMiddleWare_1.GlobalMiddleWare.adminAuthenticate, AdminValidators_1.AdminValidators.createUser(), GlobalMiddleWare_1.GlobalMiddleWare.checkError, AdminController_1.AdminController.createUser);
+        this.router.post('/check_user', GlobalMiddleWare_1.GlobalMiddleWare.adminAuthenticate, AdminValidators_1.AdminValidators.checkUser(), GlobalMiddleWare_1.GlobalMiddleWare.checkError, AdminController_1.AdminController.checkUser);
         this.router.post('/transfer/user', GlobalMiddleWare_1.GlobalMiddleWare.adminAuthenticate, AdminValidators_1.AdminValidators.transfer(), GlobalMiddleWare_1.GlobalMiddleWare.checkError, AdminController_1.AdminController.transfer);
         this.router.post('/withdraw/user', GlobalMiddleWare_1.GlobalMiddleWare.adminAuthenticate, AdminValidators_1.AdminValidators.withdraw(), GlobalMiddleWare_1.GlobalMiddleWare.checkError, AdminController_1.AdminController.withdraw);
     }

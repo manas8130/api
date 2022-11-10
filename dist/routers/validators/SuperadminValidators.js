@@ -26,7 +26,31 @@ class SuperadminValidators {
     static createAdmin() {
         return [
             (0, express_validator_1.body)('name', 'name is Required').isString(),
+            (0, express_validator_1.body)('code', 'code is Required').isString().custom((code, { req }) => {
+                return Admin_1.default.findOne({ code: code }).then(admin => {
+                    if (admin) {
+                        throw new Error('Admin Already Exist');
+                    }
+                    else {
+                        return true;
+                    }
+                });
+            }),
             (0, express_validator_1.body)('password', 'password is Required').isString(),
+        ];
+    }
+    static checkAdmin() {
+        return [
+            (0, express_validator_1.body)('code', 'code is Required').isString().custom((code, { req }) => {
+                return Admin_1.default.findOne({ code: code }).then(admin => {
+                    if (admin) {
+                        throw new Error('Admin Code Already Exist');
+                    }
+                    else {
+                        return true;
+                    }
+                });
+            }),
         ];
     }
     static login() {

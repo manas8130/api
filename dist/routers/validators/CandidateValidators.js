@@ -29,7 +29,7 @@ class CandidateValidators {
                 });
             }),
             (0, express_validator_1.body)('name', 'name Is Required').custom((name, { req }) => {
-                return Candidate_1.default.findOne({ name: name, state_id: req.body.state_id }).then(candidate => {
+                return Candidate_1.default.findOne({ name: name, location_id: req.body.location_id }).then(candidate => {
                     if (candidate) {
                         throw new Error('Candidate Already Exist');
                     }
@@ -38,7 +38,16 @@ class CandidateValidators {
                     }
                 });
             }),
-            (0, express_validator_1.body)('party_name', 'party_name Is Required'),
+            (0, express_validator_1.body)('party_name', 'party_name Is Required').custom((party_name, { req }) => {
+                return Candidate_1.default.findOne({ party_name: party_name, location_id: req.body.location_id }).then(candidate => {
+                    if (candidate) {
+                        throw new Error('Party Already Exist');
+                    }
+                    else {
+                        return true;
+                    }
+                });
+            }),
         ];
     }
     static Candidate() {
